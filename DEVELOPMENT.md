@@ -80,3 +80,21 @@ uv run --no-project --python 3.12 --with "astrbot==4.16.0" --with pytest --with 
 使用真实 Context 的插件查询方法，但不初始化无关服务，未启动完整消息管线的发送/模型阶段。
 不会连接 QQ；临时实例显式隔离 ASTRBOT_ROOT，完成后释放数据库连接并清理文件。
 原 API 冒烟脚本仍保留，用于检查业务 API 和分段结果，两类脚本均在 CI 的 AstrBot 版本矩阵中运行。
+
+## 自动安装包与 Release
+
+main 分支 push、PR 和手动 CI 会上传 `plugin-package` artifact，可在对应 Actions 运行页面下载，保留 14 天。
+GitHub artifact 下载得到的外层 ZIP 中包含真正的插件安装 ZIP，安装时使用里面的文件。
+
+正式发布先修改 `metadata.yaml` 版本并提交、push，再推送对应 tag：
+
+```powershell
+git tag v1.1.2
+git push origin v1.1.2
+```
+
+`v*` tag 会运行完整 CI，校验 tag 与元数据版本一致；质量与两个 AstrBot 版本检查全部通过后，
+自动创建 GitHub Release，生成发布说明并附上同一次 CI 构建的安装 ZIP。
+无需额外配置 secret，使用 GitHub 提供的 GITHUB_TOKEN；仅发布 job 有仓库内容写权限。
+若同名 Release 已存在，重新运行工作流会更新同名 ZIP 附件，保留原发布说明。
+此流程用于正式版本；预发布版本需另行设置 Release 的 pre-release 状态。
