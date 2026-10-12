@@ -1,0 +1,15 @@
+{
+  "daily_reset_enabled": {
+    "type": "bool",
+    "description": "每天自动清空集会码",
+    "default": false,
+    "hint": "启用后会在启动和命令操作时补做错过的重置。关闭期间的旧集会码可能在重新启用时被清空。"
+  },
+  "reset_hour": {
+    "type": "int",
+    "description": "每日重置小时",
+    "default": 4,
+    "slider": {"min": 0, "max": 23, "step": 1},
+    "hint": "0 到 23，后台每分钟检查；命令操作前也会检查是否到期。"
+  }
+}

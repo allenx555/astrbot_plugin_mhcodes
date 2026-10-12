@@ -1,0 +1,10 @@
+name: astrbot_plugin_mhcodes
+display_name: 怪物猎人集会码
+desc: 群聊集会码管理、角色与武器登记、登记时间及每日重置
+version: 1.1.2
+author: allenx555
+# 本地移植版尚未发布独立仓库，不能将更新源指向 NoneBot 原仓库。
+repo: ""
+astrbot_version: ">=4.16,<5"
+support_platforms:
+  - aiocqhttp
