@@ -1,7 +1,7 @@
 name: astrbot_plugin_mhcodes
 display_name: 怪物猎人集会码
 desc: 群聊集会码管理、角色与武器登记、登记时间及每日重置
-version: 1.1.2
+version: 1.1.3
 author: allenx555
 repo: https://github.com/allenx555/astrbot_plugin_mhcodes
 astrbot_version: ">=4.16,<5"
