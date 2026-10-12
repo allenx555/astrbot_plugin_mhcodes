@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import tempfile
+from importlib.metadata import version
 from pathlib import Path
 
 
@@ -86,7 +87,7 @@ async def check(root):
     print(
         json.dumps(
             {
-                "astrbot": "4.16.0",
+                "astrbot": version("astrbot"),
                 "metadata": "OK",
                 "real_api_handlers": "OK",
                 "mh_prefix_filters": "OK",

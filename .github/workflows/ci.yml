@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Unit tests and Ruff
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: astrbot_plugin_mhcodes
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install test tools
+        run: python -m pip install 'pytest>=8,<10' 'ruff>=0.15,<0.16'
+      - name: Check code and run tests
+        working-directory: astrbot_plugin_mhcodes
+        run: |
+          ruff check .
+          ruff format --check .
+          python -m pytest -q
+          python scripts/build_package.py
+
+  astrbot-api:
+    name: AstrBot API (${{ matrix.astrbot }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        astrbot: ['astrbot==4.16.0', 'astrbot>=4.16,<5']
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: astrbot_plugin_mhcodes
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install AstrBot
+        env:
+          ASTRBOT_SPEC: ${{ matrix.astrbot }}
+        run: python -m pip install "$ASTRBOT_SPEC" -r astrbot_plugin_mhcodes/requirements.txt
+      - name: Report installed AstrBot version
+        run: python -c "from importlib.metadata import version; print('AstrBot', version('astrbot'))"
+      - name: Run real API smoke check (no QQ connection)
+        run: python astrbot_plugin_mhcodes/scripts/smoke_astrbot.py

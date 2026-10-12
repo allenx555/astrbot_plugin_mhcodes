@@ -1,0 +1,48 @@
+name: Bug 反馈
+description: 报告问题并提供复现信息
+title: '[Bug] '
+labels: ['bug']
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交前检查
+      options:
+        - label: 已搜索现有 Issue，确认没有重复反馈
+          required: true
+        - label: 已尝试通过 AstrBot 插件管理页面重载插件，或在下方说明无法重载的原因
+          required: true
+  - type: input
+    id: versions
+    attributes:
+      label: 插件和 AstrBot 版本
+      placeholder: '插件 1.1.2 / AstrBot 4.16.0'
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 平台与运行环境
+      placeholder: 'QQ 群聊 / aiocqhttp / NapCat / Docker / Python 3.12'
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤及出现频率
+      description: 填写具体命令、操作顺序，以及是否稳定出现。
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: 预期行为与实际行为
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志与补充信息
+      description: 提供重载及触发问题附近的日志；请移除账号凭据、群号、用户标识和集会码等隐私信息。没有日志时请说明。
+    validations:
+      required: true
