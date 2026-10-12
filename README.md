@@ -72,8 +72,8 @@ data/plugin_data/astrbot_plugin_mhcodes/mh_codes.json
 `mh_codes.json.v1.<唯一标识>.bak`，再原子升级；旧记录登记人和时间显示未知，不编造日期。
 回退到 1.0.0 前需停用插件并恢复 v1 备份；升级后的新登记信息无法由旧版读取。
 
-本版尚无独立远程仓库，`metadata.yaml` 的 `repo` 留空，避免更新时错误下载 NoneBot 原插件。
-可以本地安装，但发布插件市场前需要填写真实移植版仓库并完成真实环境测试。
+移植版仓库为 [allenx555/astrbot_plugin_mhcodes](https://github.com/allenx555/astrbot_plugin_mhcodes)。
+可以通过 AstrBot 插件管理使用此仓库地址安装和更新；插件市场提交前仍需完成真实环境测试。
 
 旧 NoneBot 的 `mh_codes.json` 不能直接覆盖新文件：旧格式只有群号，缺少平台实例和重置日期。
 本次未搬运任何生产数据。如果要导入，应先备份、停用插件，显式指定平台实例并转换格式。

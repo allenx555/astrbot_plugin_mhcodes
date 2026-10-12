@@ -28,7 +28,7 @@
 - 配置做运行时校验；文件损坏和保存失败提供日志及用户可见错误。
 - 进行相关功能测试与 Ruff 检查/格式化。
 - README 标明移植来源，保留原 MIT 许可证。没有复制官方 helloworld 模板的实现代码。
-- 本地版不虚构远程仓库 URL；市场发布需要真实仓库、正确元数据及实际平台测试。
+- 元数据更新源为真实移植版仓库 `allenx555/astrbot_plugin_mhcodes`；市场发布仍需实际平台测试。
 
 以上入口及处理器依据 [最小实例](https://docs.astrbot.app/dev/star/guides/simple.html)，
 测试、数据目录、异步网络、格式化和移植署名依据
