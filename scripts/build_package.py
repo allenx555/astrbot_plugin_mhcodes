@@ -14,6 +14,7 @@ files = [
     "_conf_schema.json",
     "requirements.txt",
     "README.md",
+    "CONTRIBUTING.md",
     "DEVELOPMENT.md",
     "LICENSE",
     "pyproject.toml",

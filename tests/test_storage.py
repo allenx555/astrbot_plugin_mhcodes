@@ -159,6 +159,73 @@ def test_cancelled_transaction_finishes_before_next_writer(setup_store, monkeypa
     run(scenario())
 
 
+@pytest.mark.parametrize("waiter_action", ["add", "close"])
+@pytest.mark.parametrize("write_fails", [False, True])
+def test_repeated_cancellation_waits_for_write_and_close(
+    setup_store, monkeypatch, waiter_action, write_fails
+):
+    store, _ = setup_store
+    entered, release, finished = threading.Event(), threading.Event(), threading.Event()
+    original = store._save
+
+    def blocked(data):
+        if any(
+            entry["code"] == "first"
+            for group in data["groups"].values()
+            for entry in group["codes"]
+        ):
+            entered.set()
+            try:
+                assert release.wait(5)
+                if write_fails:
+                    raise StorageError("simulated write failure")
+                original(data)
+            finally:
+                finished.set()
+        else:
+            original(data)
+
+    monkeypatch.setattr(store, "_save", blocked)
+
+    async def scenario():
+        key = group_key("qq", "100")
+        first = asyncio.create_task(store.execute("add", key, "first"))
+        waiter = None
+        try:
+            assert await asyncio.to_thread(entered.wait, 5)
+            for _ in range(3):
+                first.cancel()
+                # 让取消传递到事务等待，并给 worker 的取消回调执行机会。
+                await asyncio.sleep(0)
+                await asyncio.sleep(0)
+                assert not first.done()
+            waiter = asyncio.create_task(
+                store.execute("add", key, "second") if waiter_action == "add" else store.close()
+            )
+            await asyncio.sleep(0)
+            assert not waiter.done()
+            assert not finished.is_set()
+        finally:
+            release.set()
+            # 即使断言失败，也等待线程结束，避免污染后续测试。
+            assert await asyncio.to_thread(finished.wait, 5)
+            await asyncio.gather(first, return_exceptions=True)
+        with pytest.raises(asyncio.CancelledError):
+            await first
+        assert waiter is not None
+        await waiter
+        if waiter_action == "close":
+            with pytest.raises(StorageError):
+                await store.execute("list", key)
+            await store.reopen()
+        expected = [] if write_fails else ["first"]
+        if waiter_action == "add":
+            expected.append("second")
+        assert await store.execute("list", key) == expected
+
+    run(scenario())
+
+
 @pytest.mark.parametrize(
     "config",
     [

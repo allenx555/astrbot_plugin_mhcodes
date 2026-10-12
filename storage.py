@@ -291,7 +291,17 @@ class CodeStore:
             try:
                 return await asyncio.shield(worker)
             except asyncio.CancelledError:
-                try:
-                    await worker
-                finally:
-                    raise
+                # 等待期间仍可能再次被取消。每次 await 都保护 worker，
+                # 必须在线程真正结束后才释放锁或允许 close() 完成。
+                while not worker.done():
+                    try:
+                        await asyncio.shield(worker)
+                    except asyncio.CancelledError:
+                        continue
+                    except Exception:
+                        break
+                # 已取消的调用仍以取消结束，同时取走 worker 的异常，
+                # 避免写入失败时留下无人处理的 Task 异常。
+                with suppress(Exception, asyncio.CancelledError):
+                    worker.result()
+                raise
