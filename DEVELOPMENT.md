@@ -94,7 +94,11 @@ git push origin v1.1.2
 ```
 
 `v*` tag 会运行完整 CI，校验 tag 与元数据版本一致；质量与两个 AstrBot 版本检查全部通过后，
-自动创建 GitHub Release，生成发布说明并附上同一次 CI 构建的安装 ZIP。
+自动创建 GitHub Release，使用 git-cliff 生成发布说明并附上同一次 CI 构建的安装 ZIP。
+发布 job 拉取完整历史，使用 `--current` 仅生成当前 tag 相对上一个版本 tag 的改动；首个 tag 包含此前全部提交。
+`.github/cliff.toml` 按 feat、fix、refactor、perf、docs、style、test、build、ci、chore 和 revert 分类，
+普通提交归入“其他改动”，每项附提交链接与作者；GitHub 集成可显示账号及新贡献者。
+提交正文不逐行拆分，日志每项对应一条提交。后续改动会进入下一版，已发布的旧 tag 不会自动更新。
 无需额外配置 secret，使用 GitHub 提供的 GITHUB_TOKEN；仅发布 job 有仓库内容写权限。
-若同名 Release 已存在，重新运行工作流会更新同名 ZIP 附件，保留原发布说明。
+若同名 Release 已存在，重新运行工作流会更新同名 ZIP 附件，并用生成的日志替换发布说明。
 此流程用于正式版本；预发布版本需另行设置 Release 的 pre-release 状态。

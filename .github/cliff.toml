@@ -1,0 +1,52 @@
+[remote.github]
+owner = "allenx555"
+repo = "astrbot_plugin_mhcodes"
+
+[changelog]
+header = ""
+body = """
+{% if version %}
+## {{ version | trim_start_matches(pat="v") }} ({{ timestamp | date(format="%Y-%m-%d") }})
+{% else %}
+## 未发布
+{% endif %}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim }}
+{% for commit in commits %}
+- {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{% if commit.breaking %}**BREAKING:** {% endif %}{{ commit.message | split(pat="\n") | first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/allenx555/astrbot_plugin_mhcodes/commit/{{ commit.id }})) — {% if commit.remote.username %}@{{ commit.remote.username }}{% else %}{{ commit.author.name }}{% endif %}
+{% endfor %}
+{% endfor %}
+{% if github %}
+{% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
+{% if loop.first %}
+### 新贡献者 ❤️
+{% endif %}
+- @{{ contributor.username }}
+{% endfor %}
+{% endif %}
+"""
+footer = ""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = false
+split_commits = false
+filter_commits = false
+tag_pattern = "^v[0-9]"
+sort_commits = "oldest"
+commit_parsers = [
+    { message = "^feat", group = "<!-- 00 -->✨ 新功能" },
+    { message = "^fix", group = "<!-- 01 -->🐛 Bug 修复" },
+    { message = "^refactor", group = "<!-- 02 -->🚜 代码重构" },
+    { message = "^perf", group = "<!-- 03 -->🚀 性能优化" },
+    { message = "^docs", group = "<!-- 04 -->📚 文档" },
+    { message = "^style", group = "<!-- 05 -->🎨 样式" },
+    { message = "^test", group = "<!-- 06 -->🧪 测试" },
+    { message = "^build", group = "<!-- 07 -->📦 构建与打包" },
+    { message = "^ci", group = "<!-- 08 -->⚙️ 持续集成" },
+    { message = "^chore\\(deps\\)", group = "<!-- 09 -->📦 依赖更新" },
+    { message = "^chore", group = "<!-- 10 -->🔧 日常维护" },
+    { message = "^revert", group = "<!-- 11 -->◀️ 撤销" },
+    { message = ".*", group = "<!-- 12 -->📝 其他改动" },
+]
