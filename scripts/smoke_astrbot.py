@@ -117,9 +117,15 @@ if __name__ == "__main__":
     sys.path.insert(0, str(root.parent))
     # 在导入 AstrBot 之前切换目录，框架产生的数据库/日志均位于临时目录。
     original_cwd = Path.cwd()
+    original_root = os.environ.get("ASTRBOT_ROOT")
     with tempfile.TemporaryDirectory(prefix="mhcodes-astrbot-") as temp:
         try:
+            os.environ["ASTRBOT_ROOT"] = temp
             os.chdir(temp)
             asyncio.run(check(root))
         finally:
             os.chdir(original_cwd)
+            if original_root is None:
+                os.environ.pop("ASTRBOT_ROOT", None)
+            else:
+                os.environ["ASTRBOT_ROOT"] = original_root

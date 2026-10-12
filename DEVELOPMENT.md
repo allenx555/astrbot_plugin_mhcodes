@@ -65,3 +65,18 @@ uv run --no-project --python 3.12 --with "astrbot==4.16.0" --with pytest --with 
 
 尚未部署到用户的 AstrBot 服务，尚未验证实际 QQ 收发。以上不包含生产数据迁移。
 安装包由 `scripts/build_package.py` 的文件清单生成，排除本地测试日志、数据、缓存，并检查 ZIP 完整性。
+
+## 新增打包与加载器验证
+
+打包脚本用开发依赖 PyYAML 解析 `metadata.yaml`，输出 `name-version.zip`，ZIP 根目录使用插件 name。
+新增测试覆盖不同版本、不同克隆目录、非法元数据和运行数据排除。
+`requirements-dev.txt` 统一管理测试、Ruff 与打包依赖；插件运行依赖仍为空。
+
+`scripts/smoke_lifecycle.py` 将生成的安装包解压到临时 AstrBot 数据目录，使用真实 `PluginManager`
+加载配置并绑定处理器，通过官方 `WakingCheckStage` 与 `StarRequestSubStage` 验证命令。
+覆盖默认前缀剥离、自定义前缀、私聊排除、配置和会话插件禁用、连续三次重载、旧实例关闭、
+处理器不重复注册、后台任务不重复、资料与集会码持久化，以及禁用后重新启用。
+
+使用真实 Context 的插件查询方法，但不初始化无关服务，未启动完整消息管线的发送/模型阶段。
+不会连接 QQ；临时实例显式隔离 ASTRBOT_ROOT，完成后释放数据库连接并清理文件。
+原 API 冒烟脚本仍保留，用于检查业务 API 和分段结果，两类脚本均在 CI 的 AstrBot 版本矩阵中运行。
