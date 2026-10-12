@@ -9,7 +9,27 @@ from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, StarTools
 
-from .storage import BEIJING_TIME, CodeStore, Settings, StorageError, group_key
+from .storage import BEIJING_TIME, CodeStore, InputError, Settings, StorageError, group_key
+
+MAX_MESSAGE_LENGTH = 1500
+
+
+def split_message(text: str) -> list[str]:
+    """优先沿记录或行边界分段；旧版超长单行也不会超过每段上限。"""
+    chunks = []
+    while len(text) > MAX_MESSAGE_LENGTH:
+        boundary = text.rfind("\n\n", 0, MAX_MESSAGE_LENGTH)
+        if boundary >= 0:
+            cut = boundary + 2
+        else:
+            boundary = text.rfind("\n", 0, MAX_MESSAGE_LENGTH)
+            cut = boundary + 1 if boundary >= 0 else MAX_MESSAGE_LENGTH
+        chunks.append(text[:cut])
+        text = text[cut:]
+    if text:
+        chunks.append(text)
+    return chunks
+
 
 COMMAND_PATTERN = (
     r"^/?mh[ \t]*(角色|武器|添加集会码|删除集会码|删除序号)(?:[ \t]+([\s\S]*))?$"
@@ -111,10 +131,10 @@ class MhCodesPlugin(Star):
                             else "❌该序号不存在，请重新查看集会码"
                         )
                 elif command == "查看集会码":
-                    codes = await self.store.execute("entries", key)
-                    profile = await self.store.execute(
-                        "profile", key, sender_id=event.get_sender_id()
+                    snapshot = await self.store.execute(
+                        "snapshot", key, sender_id=event.get_sender_id()
                     )
+                    codes, profile = snapshot["entries"], snapshot["profile"]
                     personal = (
                         f"你的角色：{profile.get('role') or '未登记'} ｜ "
                         f"常用武器：{profile.get('weapon') or '未登记'}\n"
@@ -135,10 +155,13 @@ class MhCodesPlugin(Star):
                         if cleared
                         else "❌当前群组没有集会码需要重置"
                     )
+        except InputError as exc:
+            text = f"❌{exc}"
         except (StorageError, ValueError) as exc:
             logger.error(f"集会码命令执行失败: {exc}")
             text = "❌集会码操作失败，请联系管理员检查插件日志。"
-        yield event.plain_result(text)
+        for chunk in split_message(text):
+            yield event.plain_result(chunk)
         event.stop_event()
 
     def _format_entry(self, index: int, entry: dict) -> str:

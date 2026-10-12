@@ -77,6 +77,15 @@ async def check(root):
     assert "已全部重置" in (await dispatch("重置集会码"))[0]
     await dispatch("添加集会码 numbered")
     assert "已删除集会码 numbered" in (await dispatch("删除序号 1"))[0]
+    assert "最多 32" in (await dispatch("角色 " + "猎" * 33))[0]
+    for index in range(20):
+        await dispatch(f"添加集会码 long-{index:02d}-" + "x" * 100, group="long-group")
+    parts = await dispatch("查看集会码", group="long-group")
+    assert len(parts) > 1
+    assert all(0 < len(part) <= main.MAX_MESSAGE_LENGTH for part in parts)
+    combined = "".join(parts)
+    for index in range(20):
+        assert combined.count(f"{index + 1}. long-{index:02d}-" + "x" * 100) == 1
     await dispatch("添加集会码 persisted")
     await plugin.terminate()
     assert first_task.cancelled()
@@ -92,6 +101,7 @@ async def check(root):
                 "real_api_handlers": "OK",
                 "mh_prefix_filters": "OK",
                 "role_weapon_timestamp": "OK",
+                "input_limits_and_segmented_list": "OK",
                 "private_message_filter": "OK",
                 "group_and_platform_isolation": "OK",
                 "persistence": "OK",

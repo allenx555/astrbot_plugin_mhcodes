@@ -12,6 +12,14 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 BEIJING_TIME = timezone(timedelta(hours=8), "北京时间")
+MAX_ROLE_LENGTH = 32
+MAX_WEAPON_LENGTH = 32
+MAX_CODE_LENGTH = 128
+MAX_GROUP_CODES = 100
+
+
+class InputError(ValueError):
+    """用户输入或群记录数量超限，可直接向用户解释。"""
 
 
 class StorageError(Exception):
@@ -214,9 +222,15 @@ class CodeStore:
             changed = True
 
         codes = data["groups"].get(key, {}).get("codes", [])
-        existing = next((entry for entry in codes if entry["code"] == code), None)
+        existing = (
+            next((entry for entry in codes if entry["code"] == code), None)
+            if action in {"add", "remove"}
+            else None
+        )
         result = False
         if action == "add" and existing is None:
+            if len(codes) >= MAX_GROUP_CODES:
+                raise InputError(f"每群最多保存 {MAX_GROUP_CODES} 条集会码，请先删除失效记录")
             data["groups"].setdefault(key, {"codes": [], "members": {}})["codes"].append(
                 {
                     "code": code,
@@ -238,9 +252,14 @@ class CodeStore:
             changed = result = True
         elif action == "list":
             result = [entry["code"] for entry in codes]
-        elif action == "entries":
+        elif action in {"entries", "snapshot"}:
             members = data["groups"].get(key, {}).get("members", {})
-            result = [{**entry, **members.get(entry["registered_by"], {})} for entry in codes]
+            entries = [{**entry, **members.get(entry["registered_by"], {})} for entry in codes]
+            result = (
+                entries
+                if action == "entries"
+                else {"entries": entries, "profile": dict(members.get(sender_id, {}))}
+            )
         elif action in {"role", "weapon"}:
             group = data["groups"].setdefault(key, {"codes": [], "members": {}})
             profile = group["members"].setdefault(sender_id, {"role": "", "weapon": ""})
@@ -263,6 +282,7 @@ class CodeStore:
             "reset",
             "list",
             "entries",
+            "snapshot",
             "remove_index",
             "role",
             "weapon",
@@ -280,6 +300,16 @@ class CodeStore:
             code = code.strip()
             if not code:
                 raise ValueError("集会码不能为空")
+        # 不限制读取、删除和数据升级，保证旧版超长记录仍可管理。
+        limits = {
+            "role": ("角色名称", MAX_ROLE_LENGTH),
+            "weapon": ("武器", MAX_WEAPON_LENGTH),
+            "add": ("集会码", MAX_CODE_LENGTH),
+        }
+        if action in limits:
+            label, maximum = limits[action]
+            if len(code) > maximum:
+                raise InputError(f"{label}最多 {maximum} 个字符，请缩短后重试")
         async with self._lock:
             if self._closed:
                 raise StorageError("插件已停用或正在重载，请稍后重试")
